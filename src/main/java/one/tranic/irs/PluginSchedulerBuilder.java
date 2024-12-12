@@ -26,8 +26,8 @@ import java.util.concurrent.TimeUnit;
  * {@code
  * PluginSchedulerBuilder.builder(plugin)
  *     .sync()
- *     .setTask(() -> Bukkit.getLogger().info("Task executed!"))
- *     .setDelayTicks(20L)
+ *     .task(() -> Bukkit.getLogger().info("Task executed!"))
+ *     .delayTicks(20L)
  *     .run();
  * }
  * </pre>
@@ -61,6 +61,13 @@ public class PluginSchedulerBuilder {
      */
     public static PluginSchedulerBuilder builder(Plugin plugin) {
         return new PluginSchedulerBuilder(plugin);
+    }
+
+    public void cancelTasks(Plugin plugin) {
+        if (folia) {
+            Bukkit.getGlobalRegionScheduler().cancelTasks(plugin);
+            Bukkit.getAsyncScheduler().cancelTasks(plugin);
+        } else Bukkit.getScheduler().cancelTasks(plugin);
     }
 
     /**
@@ -117,7 +124,7 @@ public class PluginSchedulerBuilder {
      * @param runnable the task to execute
      * @return this builder instance for method chaining
      */
-    public PluginSchedulerBuilder setTask(@NotNull Runnable runnable) {
+    public PluginSchedulerBuilder task(@NotNull Runnable runnable) {
         if (this.task == null) this.task = runnable;
         return this;
     }
@@ -128,7 +135,7 @@ public class PluginSchedulerBuilder {
      * @param delayTicks the number of ticks to delay
      * @return this builder instance for method chaining
      */
-    public PluginSchedulerBuilder setDelayTicks(long delayTicks) {
+    public PluginSchedulerBuilder delayTicks(long delayTicks) {
         if (this.folia && delayTicks < 1L) this.delayTicks = 1L;
         else this.delayTicks = delayTicks;
         return this;
@@ -140,7 +147,7 @@ public class PluginSchedulerBuilder {
      * @param period the number of ticks between executions
      * @return this builder instance for method chaining
      */
-    public PluginSchedulerBuilder setPeriod(long period) {
+    public PluginSchedulerBuilder period(long period) {
         if (this.folia && period < 1L) this.period = 1L;
         else this.period = period;
         return this;
