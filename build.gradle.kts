@@ -1,12 +1,16 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
 plugins {
     `java-library`
-    `maven-publish`
     idea
     signing
+
+    id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
 group = "one.tranic"
-version = "1.1.0-SNAPSHOT"
+version = "1.1.0"
+
 
 repositories {
     mavenCentral()
@@ -26,7 +30,7 @@ java {
     if (JavaVersion.current() < javaVersion) {
         toolchain.languageVersion.set(JavaLanguageVersion.of(targetJavaVersion))
     }
-    withJavadocJar()
+    //withJavadocJar()
     withSourcesJar()
 }
 
@@ -41,9 +45,9 @@ tasks.withType<JavaCompile> {
     options.release = targetJavaVersion
 }
 
-tasks.withType<Javadoc> {
+/*tasks.withType<Javadoc> {
     options.encoding = Charsets.UTF_8.name()
-}
+}*/
 
 tasks.withType<ProcessResources> {
     filteringCharset = Charsets.UTF_8.name()
@@ -62,15 +66,49 @@ configurations.api {
     extendsFrom(apiAndDocs)
 }
 
+mavenPublishing {
+    coordinates(group as String, "irs", version as String)
+
+    pom {
+        name.set("IRScheduler")
+        description.set("Provide a unified and fast scheduler tool for Spigot and Folia")
+        inceptionYear.set("2024")
+        url.set("https://github.com/404Setup/irs")
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+        developers {
+            developer {
+                id.set("404")
+                name.set("404Setup")
+                url.set("https://github.com/404Setup")
+            }
+        }
+        scm {
+            url.set("https://github.com/404Setup/irs")
+            connection.set("scm:git:git://github.com/404Setup/irs.git")
+            developerConnection.set("scm:git:ssh://git@github.com/404Setup/irs.git")
+        }
+    }
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+
+    signAllPublications()
+}
+
+/*
 publishing {
     repositories {
         maven {
             url = uri(layout.buildDirectory.dir("repo"))
         }
 
-        /*maven {
+        maven {
             name = "central"
-            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
             /*credentials(HttpHeaderCredentials::class.java) {
                 name = rootProject.extensions.extraProperties.properties["centralAuthHeaderName"] as String
                 value = rootProject.extensions.extraProperties.properties["centralAuthHeaderValue"] as String
@@ -78,7 +116,14 @@ publishing {
             authentication {
                 val header by registering(HttpHeaderAuthentication::class)
             }*/
-        }*/
+            credentials {
+                username = rootProject.extensions.extraProperties.properties["centralAuthUserName"] as String
+                password = rootProject.extensions.extraProperties.properties["centralAuthPasswd"] as String
+            }
+            authentication {
+                create<BasicAuthentication>("basic")
+            }
+        }
     }
     publications {
         create<MavenPublication>("mavenJava") {
@@ -113,8 +158,8 @@ publishing {
             }
         }
     }
-}
+}*/
 
-signing {
+/*signing {
     sign(publishing.publications["mavenJava"])
-}
+}*/
