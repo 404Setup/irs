@@ -63,7 +63,7 @@ public class PluginSchedulerBuilder {
         return new PluginSchedulerBuilder(plugin);
     }
 
-    public void cancelTasks(Plugin plugin) {
+    public void cancelTasks() {
         if (folia) {
             Bukkit.getGlobalRegionScheduler().cancelTasks(plugin);
             Bukkit.getAsyncScheduler().cancelTasks(plugin);
