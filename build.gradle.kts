@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "one.tranic"
-version = "1.0.0"
+version = "1.0.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -65,34 +65,20 @@ configurations.api {
 publishing {
     repositories {
         maven {
-            // change to point to your repo, e.g. http://my.org/repo
             url = uri(layout.buildDirectory.dir("repo"))
         }
 
-        maven {
-            name = "sonatypeRepository"
-            url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
-            credentials(HttpHeaderCredentials::class.java) {
+        /*maven {
+            name = "central"
+            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            /*credentials(HttpHeaderCredentials::class.java) {
                 name = rootProject.extensions.extraProperties.properties["centralAuthHeaderName"] as String
                 value = rootProject.extensions.extraProperties.properties["centralAuthHeaderValue"] as String
             }
             authentication {
                 val header by registering(HttpHeaderAuthentication::class)
-            }
-        }
-
-        maven {
-            name = "sonatypeSnapshotRepository"
-            url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
-            credentials(HttpHeaderCredentials::class.java) {
-                name = rootProject.extensions.extraProperties.properties["centralAuthHeaderName"] as String
-                value = rootProject.extensions.extraProperties.properties["centralAuthHeaderValue"] as String
-            }
-
-            authentication {
-                val header by registering(HttpHeaderAuthentication::class)
-            }
-        }
+            }*/
+        }*/
     }
     publications {
         create<MavenPublication>("mavenJava") {
