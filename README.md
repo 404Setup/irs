@@ -23,7 +23,7 @@ Irs are published to a central repository and can be imported without adding add
 <dependency>
     <groupId>one.tranic</groupId>
     <artifactId>irs</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </dependency>
 ```
 
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'one.tranic:irs:1.1.0'
+    implementation 'one.tranic:irs:1.1.1'
 }
 ```
 
@@ -45,7 +45,7 @@ repositories {
 }
 
 dependencies {
-    implementation("one.tranic:irs:1.1.0")
+    implementation("one.tranic:irs:1.1.1")
 }
 ```
 
