@@ -9,7 +9,8 @@ Irs is compatible with Folia, but this is not a reason to abuse the scheduler.
 
 There are three schedulers in Folia: `GlobalRegionScheduler`, `AsyncScheduler`, and `EntityScheduler`.
 
-Both `Bukkit.getScheduler()` and `new BukkitRunnable().run()` that were available in Spigot and Paper are no longer available.
+Both `Bukkit.getScheduler()` and `new BukkitRunnable().run()` that were available in Spigot and 
+Paper are no longer available.
 
 To learn more, see the Folia [project description](https://github.com/PaperMC/Folia#thread-contexts-for-api).
 
@@ -50,7 +51,9 @@ dependencies {
 
 ## Shadow Jar Relocation Guide
 
-When using the Irs library in a plugin, it is essential to relocate its dependencies to prevent conflicts with other plugins that might also include the same library. Here is a guide to set up relocation.
+When using the Irs library in a plugin, it is essential to relocate its dependencies 
+to prevent conflicts with other plugins that might also include the same library.
+Here is a guide to set up relocation.
 
 ### Gradle Shadow Plugin
 
@@ -73,7 +76,8 @@ plugins {
 
 #### Step 2: Configure Relocation
 
-Configure the Shadow plugin to relocate the `one.tranic` package. This ensures that the Irs library’s classes do not conflict with other plugins.
+Configure the Shadow plugin to relocate the `one.tranic.irs` package.
+This ensures that the Irs library’s classes do not conflict with other plugins.
 
 `Gradle (Groovy)`:
 ```groovy
@@ -96,11 +100,13 @@ Run the Shadow task to build your plugin with the relocated dependencies:
 gradle shadowJar
 ```
 
-The resulting jar file in the `build/libs` directory will include the relocated Irs library, avoiding classloader conflicts.
+The resulting jar file in the `build/libs` directory will include the relocated Irs library, 
+avoiding classloader conflicts.
 
 #### Step 4: Verify Relocation
 
-To ensure that relocation works as intended, decompile the built jar and verify that the `one.tranic` package has been renamed to `your.plugin.shadow.one.tranic` or your specified relocation path.
+To ensure that relocation works as intended, decompile the built jar and verify that the 
+`one.tranic.irs` package has been renamed to `your.plugin.shadow.irs` or your specified relocation path.
 
 ### Maven Shade Plugin
 
@@ -148,8 +154,10 @@ The resulting jar file in the `target` directory will include the relocated Irs 
 
 #### Step 3: Verify Relocation
 
-As with Gradle, decompile the jar and confirm that the `one.tranic.irs` package has been relocated to `your.plugin.shadow.irs` or the specified path.
+As with Gradle, decompile the jar and confirm that the `one.tranic.irs` package has been 
+relocated to `your.plugin.shadow.irs` or the specified path.
 
 ---
 
-By following this guide, you can safely include the Irs library in your project without worrying about conflicts with other plugins.
+By following this guide, you can safely include the Irs library in your project without 
+worrying about conflicts with other plugins.
