@@ -52,6 +52,7 @@ public class PluginSchedulerBuilder {
     public PluginSchedulerBuilder(Plugin plugin) {
         this.folia = Platform.isMultithreading();
         this.plugin = plugin;
+        this.sync = true;
     }
 
     /**
