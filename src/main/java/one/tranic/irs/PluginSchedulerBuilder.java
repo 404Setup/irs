@@ -36,8 +36,8 @@ public class PluginSchedulerBuilder {
     private final Plugin plugin;
     private boolean folia = false;
     private boolean sync;
-    private long delayTicks;
-    private long period;
+    private Long delayTicks;
+    private Long period;
     private Runnable task;
     private Consumer<? super TaskImpl<Plugin>> taskConsumer;
     private Location location;
@@ -78,7 +78,7 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder sync() {
-        if (!this.sync) this.sync = true;
+        this.sync = true;
         return this;
     }
 
@@ -89,10 +89,9 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder sync(@NotNull Location location) {
-        if (this.location == null) {
-            this.sync = true;
-            this.location = location;
-        }
+        this.sync = true;
+        this.location = location;
+        this.entity = null;
         return this;
     }
 
@@ -103,10 +102,9 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder sync(@NotNull Entity entity) {
-        if (this.entity == null) {
-            this.sync = true;
-            this.entity = entity;
-        }
+        this.sync = true;
+        this.entity = entity;
+        this.location = null;
         return this;
     }
 
@@ -116,7 +114,9 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder async() {
-        if (this.sync && (!folia && this.location == null && this.entity == null)) this.sync = false;
+        this.sync = false;
+        this.location = null;
+        this.entity = null;
         return this;
     }
 
@@ -180,6 +180,14 @@ public class PluginSchedulerBuilder {
         return folia ? new FoliaScheduledTask(runFoliaTask()) : runBukkitTask();
     }
 
+    private boolean hasDelayTicks() {
+        return this.delayTicks != null;
+    }
+
+    private boolean hasPeriod() {
+        return this.period != null;
+    }
+
     private void accept(ScheduledTask scheduledTask) {
         if (this.taskConsumer != null)
             this.taskConsumer.accept(new FoliaScheduledTask(scheduledTask));
@@ -205,7 +213,7 @@ public class PluginSchedulerBuilder {
 
     private @Nullable ScheduledTask newFoliaEntityTask() {
         @NotNull EntityScheduler scheduler = this.entity.getScheduler();
-        if (this.delayTicks != 0L) return this.period != 0L
+        if (hasDelayTicks()) return hasPeriod()
                 ? scheduler.runAtFixedRate(plugin, this::accept, null, delayTicks, period)
                 : scheduler.runDelayed(plugin, this::accept, null, delayTicks);
         return scheduler.run(plugin, this::accept, null);
@@ -213,7 +221,7 @@ public class PluginSchedulerBuilder {
 
     private @NotNull ScheduledTask newFoliaRegionTask() {
         @NotNull RegionScheduler scheduler = Bukkit.getRegionScheduler();
-        if (this.delayTicks != 0L) return this.period != 0L
+        if (hasDelayTicks()) return hasPeriod()
                 ? scheduler.runAtFixedRate(plugin, location, this::accept, delayTicks, period)
                 : scheduler.runDelayed(plugin, location, this::accept, delayTicks);
         return scheduler.run(plugin, location, this::accept);
@@ -221,7 +229,7 @@ public class PluginSchedulerBuilder {
 
     private @NotNull ScheduledTask newFoliaGlobalRegionTask() {
         @NotNull GlobalRegionScheduler scheduler = Bukkit.getGlobalRegionScheduler();
-        if (this.delayTicks != 0L) return this.period != 0L
+        if (hasDelayTicks()) return hasPeriod()
                 ? scheduler.runAtFixedRate(plugin, this::accept, delayTicks, period)
                 : scheduler.runDelayed(plugin, this::accept, delayTicks);
         return scheduler.run(plugin, this::accept);
@@ -229,7 +237,7 @@ public class PluginSchedulerBuilder {
 
     private @NotNull ScheduledTask newFoliaAsyncTask() {
         @NotNull AsyncScheduler scheduler = Bukkit.getAsyncScheduler();
-        if (this.delayTicks != 0L) return this.period != 0L
+        if (hasDelayTicks()) return hasPeriod()
                 ? scheduler.runAtFixedRate(plugin, this::accept, delayTicks * 50, period * 50, TimeUnit.MILLISECONDS)
                 : scheduler.runDelayed(plugin, this::accept, delayTicks * 50, TimeUnit.MILLISECONDS);
         return scheduler.runNow(plugin, this::accept);
@@ -237,8 +245,8 @@ public class PluginSchedulerBuilder {
 
     private @Nullable TaskImpl<Plugin> newBukkitSyncTask() {
         @NotNull BukkitScheduler scheduler = Bukkit.getScheduler();
-        if (this.delayTicks != 0L) {
-            if (this.period != 0L)
+        if (hasDelayTicks()) {
+            if (hasPeriod())
                 if (this.taskConsumer != null) {
                     scheduler.runTaskTimer(plugin, this::accept, delayTicks, period);
                     return null;
@@ -258,8 +266,8 @@ public class PluginSchedulerBuilder {
 
     private @Nullable TaskImpl<Plugin> newBukkitAsyncTask() {
         @NotNull BukkitScheduler scheduler = Bukkit.getScheduler();
-        if (this.delayTicks != 0L) {
-            if (this.period != 0L)
+        if (hasDelayTicks()) {
+            if (hasPeriod())
                 if (this.taskConsumer != null) {
                     scheduler.runTaskTimerAsynchronously(plugin, this::accept, delayTicks, period);
                     return null;
