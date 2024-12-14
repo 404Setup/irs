@@ -1,6 +1,6 @@
 # IRScheduler
 
-![Maven Central Version](https://img.shields.io/maven-central/v/one.tranic/irs)
+![Maven Central Version](https://img.shields.io/maven-central/v/one.tranic/irs) [![javadoc](https://javadoc.io/badge2/one.tranic/irs/javadoc.svg)](https://javadoc.io/doc/one.tranic/irs)
 
 Provide a unified and fast scheduler tool for Spigot and Folia.
 
