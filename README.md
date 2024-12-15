@@ -177,7 +177,7 @@ I need to get updates for my plugin, or other tasks that do not operate in the w
 
 ### GlobalRegion Scheduler
 ```java
-PluginScheduler.builder(this)
+PluginSchedulerBuilder.builder(this)
     .sync() // Starting at 1.3, Sync is the default behavior.
     .task(task)
     .run();
@@ -191,7 +191,7 @@ Bukkit.getGlobalRegionScheduler().run(this, (e)-> task.run());
 
 ### Entity Scheduler
 ```Java
-PluginScheduler.builder(this)
+PluginSchedulerBuilder.builder(this)
     .sync(entity)
     .sync(player) // Yes, players can also use.
     .task(task)
@@ -206,7 +206,7 @@ entity.getScheduler().run(this, (e) -> task.run(), null);
 
 ### Region Schduler
 ```java
-PluginScheduler.builder(this)
+PluginSchedulerBuilder.builder(this)
     .sync(entity.getLocation())
     .sync(location) // or
     .task(task)
@@ -221,7 +221,7 @@ Bukkit.getRegionScheduler().run(this, location, (e) -> task.run());
 
 ### Async Scheduler
 ```java
-PluginScheduler.builder(this)
+PluginSchedulerBuilder.builder(this)
     .async()
     .task(task)
     .run();
