@@ -24,6 +24,8 @@ import java.util.function.Consumer;
  * <p>Usage example:
  * <pre>
  * {@code
+ * // Folia: In GlobalRegion
+ * // Spigot/Paper: In MainThread Scheduler
  * PluginSchedulerBuilder.builder(plugin)
  *     .sync()
  *     .task(() -> Bukkit.getLogger().info("Task executed!"))
@@ -110,6 +112,8 @@ public class PluginSchedulerBuilder {
 
     /**
      * Configures the task to run asynchronously.
+     * <p>
+     * <strong>Processing entities and worlds in asynchronous tasks is not allowed.</strong>
      *
      * @return this builder instance for method chaining
      */
@@ -177,7 +181,7 @@ public class PluginSchedulerBuilder {
     public @Nullable TaskImpl<Plugin> run() {
         if (this.task == null && this.taskConsumer == null)
             throw new UnsupportedOperationException("It seems that the task has not been set.");
-        return folia ? new FoliaScheduledTask(runFoliaTask()) : runBukkitTask();
+        return folia ? runFoliaTask() : runBukkitTask();
     }
 
     private boolean hasDelayTicks() {
@@ -198,17 +202,23 @@ public class PluginSchedulerBuilder {
         this.taskConsumer.accept(new SpigotScheduledTask(bukkitTask));
     }
 
-    private @Nullable ScheduledTask runFoliaTask() {
-        if (sync) {
-            if (this.entity != null) return newFoliaEntityTask();
-            if (this.location != null) return newFoliaRegionTask();
-            return newFoliaGlobalRegionTask();
-        }
-        return newFoliaAsyncTask();
+    private @Nullable TaskImpl<Plugin> runBukkitTask() {
+        @NotNull BukkitScheduler scheduler = Bukkit.getScheduler();
+        return sync ? newBukkitSyncTask(scheduler) : newBukkitAsyncTask(scheduler);
     }
 
-    private @Nullable TaskImpl<Plugin> runBukkitTask() {
-        return sync ? newBukkitSyncTask() : newBukkitAsyncTask();
+    private @Nullable TaskImpl<Plugin> runFoliaTask() {
+        if (sync) {
+            @Nullable ScheduledTask tasks = runFoliaSyncTask();
+            return tasks != null ? new FoliaScheduledTask(tasks) : null;
+        }
+        return new FoliaScheduledTask(newFoliaAsyncTask(), false);
+    }
+
+    private @Nullable ScheduledTask runFoliaSyncTask() {
+        if (this.entity != null) return newFoliaEntityTask();
+        if (this.location != null) return newFoliaRegionTask();
+        return newFoliaGlobalRegionTask();
     }
 
     private @Nullable ScheduledTask newFoliaEntityTask() {
@@ -243,8 +253,7 @@ public class PluginSchedulerBuilder {
         return scheduler.runNow(plugin, this::accept);
     }
 
-    private @Nullable TaskImpl<Plugin> newBukkitSyncTask() {
-        @NotNull BukkitScheduler scheduler = Bukkit.getScheduler();
+    private @Nullable TaskImpl<Plugin> newBukkitSyncTask(BukkitScheduler scheduler) {
         if (hasDelayTicks()) {
             if (hasPeriod())
                 if (this.taskConsumer != null) {
@@ -253,8 +262,7 @@ public class PluginSchedulerBuilder {
                 } else return new SpigotScheduledTask(scheduler.runTaskTimer(plugin, task, delayTicks, period));
             else {
                 if (this.taskConsumer != null) {
-                    scheduler.runTaskLater(plugin, this::accept, delayTicks);
-                    return null;
+                    scheduler.runTaskLater(plugin, this::accept, delayTicks);return null;
                 } else return new SpigotScheduledTask(scheduler.runTaskLater(plugin, task, delayTicks));
             }
         }
@@ -264,8 +272,7 @@ public class PluginSchedulerBuilder {
         } else return new SpigotScheduledTask(scheduler.runTask(plugin, task));
     }
 
-    private @Nullable TaskImpl<Plugin> newBukkitAsyncTask() {
-        @NotNull BukkitScheduler scheduler = Bukkit.getScheduler();
+    private @Nullable TaskImpl<Plugin> newBukkitAsyncTask(BukkitScheduler scheduler) {
         if (hasDelayTicks()) {
             if (hasPeriod())
                 if (this.taskConsumer != null) {

@@ -5,9 +5,15 @@ import org.bukkit.plugin.Plugin;
 
 public class FoliaScheduledTask implements TaskImpl<Plugin> {
     private final ScheduledTask foliaTask;
+    private final boolean isSynchronized;
 
     public FoliaScheduledTask(ScheduledTask foliaTask) {
+        this(foliaTask, true);
+    }
+
+    public FoliaScheduledTask(ScheduledTask foliaTask, boolean isSynchronized) {
         this.foliaTask = foliaTask;
+        this.isSynchronized = isSynchronized;
     }
 
     @Override
@@ -32,6 +38,6 @@ public class FoliaScheduledTask implements TaskImpl<Plugin> {
 
     @Override
     public boolean isSynchronized() {
-        return false;
+        return isSynchronized;
     }
 }

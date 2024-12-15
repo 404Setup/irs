@@ -1,8 +1,9 @@
 # IRScheduler
 
-[![Maven Central Version](https://img.shields.io/maven-central/v/one.tranic/irs)](https://central.sonatype.com/artifact/one.tranic/irs) [![javadoc](https://javadoc.io/badge2/one.tranic/irs/javadoc.svg)](https://javadoc.io/doc/one.tranic/irs)
+[![Maven Central Version](https://img.shields.io/maven-central/v/one.tranic/irs)](https://central.sonatype.com/artifact/one.tranic/irs) 
+[![javadoc](https://javadoc.io/badge2/one.tranic/irs/javadoc.svg)](https://javadoc.io/doc/one.tranic/irs)
 
-Provide a unified and fast scheduler tool for Spigot and Folia.
+Use Fluent Interface Design Pattern to provide uniform and fast scheduling tools for Spigot/Folia.
 
 ## About the Scheduler
 Irs is compatible with Folia, but this is not a reason to abuse the scheduler.
@@ -147,7 +148,7 @@ Include the Maven Shade Plugin in your `pom.xml`:
 
 Run the Maven package command:
 ```bash
-mvn package
+mvn clean install
 ```
 
 The resulting jar file in the `target` directory will include the relocated Irs library.
@@ -161,3 +162,58 @@ relocated to `your.plugin.shadow.irs` or the specified path.
 
 By following this guide, you can safely include the Irs library in your project without 
 worrying about conflicts with other plugins.
+
+## Usage
+IRS tries to allow developers to use a set of codes to adapt to spigot and folia,
+but in fact, developers also need to dispatch tasks to the correct scheduling instead of blind selection.
+IRS is not so intelligent.
+
+### Select the scheduler
+I need to modify the data near an entity: `RegionScheduler` or `EntityScheduler`
+
+I need to modify the weather: `GlobalRegionScheduler`
+
+I need to get updates for my plugin, or other tasks that do not operate in the world: `AsyncScheduler` or CustomThread
+
+### GlobalRegion Scheduler
+```java
+PluginScheduler.builder(this)
+    .sync() // Starting at 1.3, Sync is the default behavior.
+    .task(task)
+    .run();
+
+// In Spigot/Paper
+Bukkit.getScheduler().runTask(this, task);
+
+// In Folia
+Bukkit.getGlobalRegionScheduler().run(this, (e)-> task.run());
+```
+
+### Entity Scheduler
+```Java
+PluginScheduler.builder(this)
+    .sync(entity)
+    .sync(player) // Yes, players can also use.
+    .task(task)
+    .run();
+
+// In Spigot/Paper
+Bukkit.getScheduler().runTask(this, task);
+
+// In Folia
+entity.getScheduler().run(this, (e) -> task.run(), null);
+```
+
+### Async Scheduler
+```java
+PluginScheduler.builder(this)
+    .async()
+    .task(task)
+    .run();
+
+// In Spigot/Paper
+Bukkit.getScheduler().runTaskAsynchronously(this, task);
+
+// In Folia
+Bukkit.getAsyncScheduler().runNow(this, (e) -> task.run());
+```

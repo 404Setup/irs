@@ -17,7 +17,8 @@ public interface TaskImpl<C> {
     /**
      * Returns true if the Task is a sync task.
      * <p>
-     * In folia, it will always be false
+     * In Folia, IRS treats <code>EntityScheduler</code>, <code>RegionScheduler</code>
+     * and <code>GlobalRegionScheduler</code> as "Synchronous tasks".
      *
      * @return true if the task is run by main thread
      */
