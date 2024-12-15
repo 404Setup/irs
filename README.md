@@ -204,6 +204,21 @@ Bukkit.getScheduler().runTask(this, task);
 entity.getScheduler().run(this, (e) -> task.run(), null);
 ```
 
+### Region Schduler
+```java
+PluginScheduler.builder(this)
+    .sync(entity.getLocation())
+    .sync(location) // or
+    .task(task)
+    .run();
+
+// In Spigot/Paper
+Bukkit.getScheduler().runTask(this, task);
+
+// In Folia
+Bukkit.getRegionScheduler().run(this, location, (e) -> task.run());
+```
+
 ### Async Scheduler
 ```java
 PluginScheduler.builder(this)
