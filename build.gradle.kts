@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
@@ -50,14 +52,23 @@ java {
     withSourcesJar()
 }
 
+tasks.withType<ShadowJar> {
+    archiveBaseName.set(project.name)
+    archiveClassifier.set("")
+}
+
+tasks.named("build") {
+    dependsOn(tasks.named("shadowJar"))
+}
+
 tasks.withType<JavaCompile> {
     options.encoding = Charsets.UTF_8.name()
     options.release = targetJavaVersion
 }
 
-/*tasks.withType<Javadoc> {
-    options.encoding = Charsets.UTF_8.name()
-}*/
+tasks.withType<Javadoc> {
+    enabled = false
+}
 
 tasks.withType<ProcessResources> {
     filteringCharset = Charsets.UTF_8.name()

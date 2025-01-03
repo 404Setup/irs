@@ -3,6 +3,8 @@ plugins {
 }
 
 java {
+    sourceCompatibility = JavaVersion.toVersion(17)
+    targetCompatibility = JavaVersion.toVersion(17)
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
