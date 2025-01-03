@@ -5,12 +5,23 @@ plugins {
     idea
     signing
 
+    id("com.gradleup.shadow") version "8.3.5" apply false
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.11"
     id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
 group = "one.tranic"
-version = "1.3.2"
+version = "1.3.3"
 
+allprojects {
+    apply(plugin = "java")
+    apply(plugin = "com.gradleup.shadow")
+
+    repositories {
+        mavenCentral()
+        maven("https://repo.papermc.io/repository/maven-public/")
+    }
+}
 
 repositories {
     mavenCentral()
@@ -18,7 +29,12 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
+    implementation(project(":Impl"))
+    implementation(project(":NMS_1201"))
+    implementation(project(":NMS_1206"))
+    implementation(project(":NMS_1214"))
+
+    paperweight.foliaDevBundle("1.20.1-R0.1-SNAPSHOT")
 }
 
 val targetJavaVersion = 17
@@ -32,12 +48,6 @@ java {
     }
     //withJavadocJar()
     withSourcesJar()
-}
-
-tasks.withType<JavaCompile>().configureEach {
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible) {
-        options.release.set(targetJavaVersion)
-    }
 }
 
 tasks.withType<JavaCompile> {
