@@ -24,7 +24,7 @@ Irs are published to a central repository and can be imported without adding add
 <dependency>
     <groupId>one.tranic</groupId>
     <artifactId>irs</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3.2</version>
 </dependency>
 ```
 
@@ -35,7 +35,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'one.tranic:irs:1.3.2'
+    implementation 'one.tranic:irs:1.3.3.2'
 }
 ```
 
@@ -46,7 +46,7 @@ repositories {
 }
 
 dependencies {
-    implementation("one.tranic:irs:1.3.2")
+    implementation("one.tranic:irs:1.3.3.2")
 }
 ```
 
@@ -64,14 +64,14 @@ Add the Shadow plugin to your `build.gradle` file.
 `Gradle (Groovy)`:
 ```groovy
 plugins {
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
+    id 'com.gradleup.shadow' version '8.3.5'
 }
 ```
 
 `Gradle (Kotlin DSL)`:
 ```kotlin
 plugins {
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "8.3.5"
 }
 ```
 

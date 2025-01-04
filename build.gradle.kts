@@ -1,23 +1,26 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SonatypeHost
+import groovy.util.Node
+import groovy.util.NodeList
 
 plugins {
     `java-library`
     idea
     signing
 
-    id("com.gradleup.shadow") version "8.3.5" apply false
+    id("com.gradleup.shadow") version "8.3.5"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.11"
     id("com.vanniktech.maven.publish") version "0.30.0"
 }
 
 group = "one.tranic"
-version = "1.3.3"
+version = "1.3.3.2"
 
 allprojects {
     apply(plugin = "java")
     apply(plugin = "com.gradleup.shadow")
+
+    version = rootProject.version
 
     repositories {
         mavenCentral()
@@ -31,10 +34,10 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":Impl"))
-    implementation(project(":NMS_1201"))
-    implementation(project(":NMS_1206"))
-    implementation(project(":NMS_1214"))
+    shadow(project(":Impl", configuration = "shadow"))
+    shadow(project(":NMS_1201", configuration = "shadow"))
+    shadow(project(":NMS_1206", configuration = "shadow"))
+    shadow(project(":NMS_1214", configuration = "shadow"))
 
     paperweight.foliaDevBundle("1.20.1-R0.1-SNAPSHOT")
 }
@@ -114,7 +117,16 @@ mavenPublishing {
             connection.set("scm:git:git://github.com/404Setup/irs.git")
             developerConnection.set("scm:git:ssh://git@github.com/404Setup/irs.git")
         }
+
+        withXml {
+            val root = asNode()
+            val nodes = root["dependencies"] as NodeList
+            if (nodes.isNotEmpty()) {
+                root.remove(nodes.first() as Node)
+            }
+        }
     }
+
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
 
     signAllPublications()
