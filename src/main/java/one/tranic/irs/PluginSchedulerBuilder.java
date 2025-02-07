@@ -35,11 +35,14 @@ import java.util.function.Consumer;
  * </pre>
  */
 public class PluginSchedulerBuilder {
+    private static final long MINIMUM_TICK = 1L;
+
+
     private final Plugin plugin;
-    private boolean folia = false;
-    private boolean sync;
-    private Long delayTicks;
-    private Long period;
+    private boolean isFoliaDispatcher;
+    private boolean isSynchronous;
+    private Long initialDelayTicks;
+    private Long periodTicks;
     private Runnable task;
     private Consumer<? super TaskImpl<Plugin>> taskConsumer;
     private Location location;
@@ -52,9 +55,9 @@ public class PluginSchedulerBuilder {
      * @param plugin the plugin instance to associate with this scheduler builder
      */
     public PluginSchedulerBuilder(Plugin plugin) {
-        this.folia = Platform.isMultithreading();
+        this.isFoliaDispatcher = Platform.isMultithreading();
         this.plugin = plugin;
-        this.sync = true;
+        this.isSynchronous = true;
     }
 
     /**
@@ -68,7 +71,7 @@ public class PluginSchedulerBuilder {
     }
 
     public void cancelTasks() {
-        if (folia) {
+        if (isFoliaDispatcher) {
             Bukkit.getGlobalRegionScheduler().cancelTasks(plugin);
             Bukkit.getAsyncScheduler().cancelTasks(plugin);
         } else Bukkit.getScheduler().cancelTasks(plugin);
@@ -80,7 +83,7 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder sync() {
-        this.sync = true;
+        this.isSynchronous = true;
         return this;
     }
 
@@ -91,7 +94,7 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder sync(@NotNull Location location) {
-        this.sync = true;
+        this.isSynchronous = true;
         this.location = location;
         this.entity = null;
         return this;
@@ -104,7 +107,7 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder sync(@NotNull Entity entity) {
-        this.sync = true;
+        this.isSynchronous = true;
         this.entity = entity;
         this.location = null;
         return this;
@@ -118,7 +121,7 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder async() {
-        this.sync = false;
+        this.isSynchronous = false;
         this.location = null;
         this.entity = null;
         return this;
@@ -155,9 +158,9 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder delayTicks(long delayTicks) {
-        if (this.folia && delayTicks < 1L) this.delayTicks = 1L;
-        else this.delayTicks = delayTicks;
+        this.initialDelayTicks = normalizeTick(delayTicks);
         return this;
+
     }
 
     /**
@@ -167,8 +170,7 @@ public class PluginSchedulerBuilder {
      * @return this builder instance for method chaining
      */
     public PluginSchedulerBuilder period(long period) {
-        if (this.folia && period < 1L) this.period = 1L;
-        else this.period = period;
+        this.periodTicks = normalizeTick(periodTicks);
         return this;
     }
 
@@ -181,34 +183,38 @@ public class PluginSchedulerBuilder {
     public @Nullable TaskImpl<Plugin> run() {
         if (this.task == null && this.taskConsumer == null)
             throw new UnsupportedOperationException("It seems that the task has not been set.");
-        return folia ? runFoliaTask() : runBukkitTask();
+        return isFoliaDispatcher ? runFoliaTask() : runBukkitTask();
     }
 
-    private boolean hasDelayTicks() {
-        return this.delayTicks != null;
+    private boolean hasInitialDelay() {
+        return this.initialDelayTicks != null;
     }
 
     private boolean hasPeriod() {
-        return this.period != null;
+        return this.periodTicks != null;
     }
 
-    private void accept(ScheduledTask scheduledTask) {
+    private long normalizeTick(long tick) {
+        return (isFoliaDispatcher && tick < MINIMUM_TICK) ? MINIMUM_TICK : tick;
+    }
+
+    private void processScheduledTask(ScheduledTask scheduledTask) {
         if (this.taskConsumer != null)
             this.taskConsumer.accept(new FoliaScheduledTask(scheduledTask));
         else this.task.run();
     }
 
-    private void accept(BukkitTask bukkitTask) {
+    private void processBukkitTask(BukkitTask bukkitTask) {
         this.taskConsumer.accept(new SpigotScheduledTask(bukkitTask));
     }
 
     private @Nullable TaskImpl<Plugin> runBukkitTask() {
         @NotNull BukkitScheduler scheduler = Bukkit.getScheduler();
-        return sync ? newBukkitSyncTask(scheduler) : newBukkitAsyncTask(scheduler);
+        return isSynchronous ? newBukkitSyncTask(scheduler) : newBukkitAsyncTask(scheduler);
     }
 
     private @Nullable TaskImpl<Plugin> runFoliaTask() {
-        if (sync) {
+        if (isSynchronous) {
             @Nullable ScheduledTask tasks = runFoliaSyncTask();
             return tasks != null ? new FoliaScheduledTask(tasks) : null;
         }
@@ -223,72 +229,74 @@ public class PluginSchedulerBuilder {
 
     private @Nullable ScheduledTask newFoliaEntityTask() {
         @NotNull EntityScheduler scheduler = this.entity.getScheduler();
-        if (hasDelayTicks()) return hasPeriod()
-                ? scheduler.runAtFixedRate(plugin, this::accept, null, delayTicks, period)
-                : scheduler.runDelayed(plugin, this::accept, null, delayTicks);
-        return scheduler.run(plugin, this::accept, null);
+        if (hasInitialDelay()) {
+            return hasPeriod()
+                    ? scheduler.runAtFixedRate(plugin, this::processScheduledTask, null, initialDelayTicks, periodTicks)
+                    : scheduler.runDelayed(plugin, this::processScheduledTask, null, initialDelayTicks);
+        }
+        return scheduler.run(plugin, this::processScheduledTask, null);
     }
 
     private @NotNull ScheduledTask newFoliaRegionTask() {
         @NotNull RegionScheduler scheduler = Bukkit.getRegionScheduler();
-        if (hasDelayTicks()) return hasPeriod()
-                ? scheduler.runAtFixedRate(plugin, location, this::accept, delayTicks, period)
-                : scheduler.runDelayed(plugin, location, this::accept, delayTicks);
-        return scheduler.run(plugin, location, this::accept);
+        if (hasInitialDelay()) return hasPeriod()
+                ? scheduler.runAtFixedRate(plugin, location, this::processScheduledTask, initialDelayTicks, periodTicks)
+                : scheduler.runDelayed(plugin, location, this::processScheduledTask, initialDelayTicks);
+        return scheduler.run(plugin, location, this::processScheduledTask);
     }
 
     private @NotNull ScheduledTask newFoliaGlobalRegionTask() {
         @NotNull GlobalRegionScheduler scheduler = Bukkit.getGlobalRegionScheduler();
-        if (hasDelayTicks()) return hasPeriod()
-                ? scheduler.runAtFixedRate(plugin, this::accept, delayTicks, period)
-                : scheduler.runDelayed(plugin, this::accept, delayTicks);
-        return scheduler.run(plugin, this::accept);
+        if (hasInitialDelay()) return hasPeriod()
+                ? scheduler.runAtFixedRate(plugin, this::processScheduledTask, initialDelayTicks, periodTicks)
+                : scheduler.runDelayed(plugin, this::processScheduledTask, initialDelayTicks);
+        return scheduler.run(plugin, this::processScheduledTask);
     }
 
     private @NotNull ScheduledTask newFoliaAsyncTask() {
         @NotNull AsyncScheduler scheduler = Bukkit.getAsyncScheduler();
-        if (hasDelayTicks()) return hasPeriod()
-                ? scheduler.runAtFixedRate(plugin, this::accept, delayTicks * 50, period * 50, TimeUnit.MILLISECONDS)
-                : scheduler.runDelayed(plugin, this::accept, delayTicks * 50, TimeUnit.MILLISECONDS);
-        return scheduler.runNow(plugin, this::accept);
+        if (hasInitialDelay()) return hasPeriod()
+                ? scheduler.runAtFixedRate(plugin, this::processScheduledTask, initialDelayTicks * 50, periodTicks * 50, TimeUnit.MILLISECONDS)
+                : scheduler.runDelayed(plugin, this::processScheduledTask, initialDelayTicks * 50, TimeUnit.MILLISECONDS);
+        return scheduler.runNow(plugin, this::processScheduledTask);
     }
 
     private @Nullable TaskImpl<Plugin> newBukkitSyncTask(BukkitScheduler scheduler) {
-        if (hasDelayTicks()) {
+        if (hasInitialDelay()) {
             if (hasPeriod())
                 if (this.taskConsumer != null) {
-                    scheduler.runTaskTimer(plugin, this::accept, delayTicks, period);
+                    scheduler.runTaskTimer(plugin, this::processBukkitTask, initialDelayTicks, periodTicks);
                     return null;
-                } else return new SpigotScheduledTask(scheduler.runTaskTimer(plugin, task, delayTicks, period));
+                } else return new SpigotScheduledTask(scheduler.runTaskTimer(plugin, task, initialDelayTicks, periodTicks));
             else {
                 if (this.taskConsumer != null) {
-                    scheduler.runTaskLater(plugin, this::accept, delayTicks);return null;
-                } else return new SpigotScheduledTask(scheduler.runTaskLater(plugin, task, delayTicks));
+                    scheduler.runTaskLater(plugin, this::processBukkitTask, initialDelayTicks);return null;
+                } else return new SpigotScheduledTask(scheduler.runTaskLater(plugin, task, initialDelayTicks));
             }
         }
         if (this.taskConsumer != null) {
-            scheduler.runTask(plugin, this::accept);
+            scheduler.runTask(plugin, this::processBukkitTask);
             return null;
         } else return new SpigotScheduledTask(scheduler.runTask(plugin, task));
     }
 
     private @Nullable TaskImpl<Plugin> newBukkitAsyncTask(BukkitScheduler scheduler) {
-        if (hasDelayTicks()) {
+        if (hasInitialDelay()) {
             if (hasPeriod())
                 if (this.taskConsumer != null) {
-                    scheduler.runTaskTimerAsynchronously(plugin, this::accept, delayTicks, period);
+                    scheduler.runTaskTimerAsynchronously(plugin, this::processBukkitTask, initialDelayTicks, periodTicks);
                     return null;
                 } else
-                    return new SpigotScheduledTask(scheduler.runTaskTimerAsynchronously(plugin, task, delayTicks, period));
+                    return new SpigotScheduledTask(scheduler.runTaskTimerAsynchronously(plugin, task, initialDelayTicks, periodTicks));
             else {
                 if (this.taskConsumer != null) {
-                    scheduler.runTaskLaterAsynchronously(plugin, this::accept, delayTicks);
+                    scheduler.runTaskLaterAsynchronously(plugin, this::processBukkitTask, initialDelayTicks);
                     return null;
-                } else return new SpigotScheduledTask(scheduler.runTaskLaterAsynchronously(plugin, task, delayTicks));
+                } else return new SpigotScheduledTask(scheduler.runTaskLaterAsynchronously(plugin, task, initialDelayTicks));
             }
         }
         if (this.taskConsumer != null) {
-            scheduler.runTaskAsynchronously(plugin, this::accept);
+            scheduler.runTaskAsynchronously(plugin, this::processBukkitTask);
             return null;
         } else return new SpigotScheduledTask(scheduler.runTaskAsynchronously(plugin, task));
     }
